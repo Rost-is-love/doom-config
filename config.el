@@ -6,8 +6,8 @@
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets. It is optional.
-(setq user-full-name "Vlad Ganshin"
-      user-mail-address "vganshin@gmail.com")
+(setq user-full-name "Rostislav Antonov"
+      user-mail-address "rostislavantony@gmail.com")
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
@@ -78,8 +78,22 @@
 (smartparens-global-strict-mode)
 (global-auto-revert-mode t)
 
+(defun try-convert (out)
+  (shell-command-on-region
+   (region-beginning) (region-end)
+   (format "~/convert.clj %s " out)
+   nil "REPLACE" nil t))
+
+(defun convert-to-edn  () (interactive) (try-convert "edn"))
+(defun convert-to-json () (interactive) (try-convert "json"))
+(defun convert-to-yaml () (interactive) (try-convert "yaml"))
+
 (map! (:localleader
       (:map (clojure-mode-map clojurescript-mode-map)
+       (:prefix ("o")
+                      "e" #'convert-to-edn
+                      "j" #'convert-to-json
+                      "y" #'convert-to-yaml)
        (:prefix ("e" . "eval")
         "f" #'cider-eval-defun-at-point
         ";" #'cider-pprint-eval-last-sexp-to-comment)))

@@ -89,36 +89,36 @@
 (defun convert-to-yaml () (interactive) (try-convert "yaml"))
 
 (map! (:localleader
-      (:map (clojure-mode-map clojurescript-mode-map)
-       (:prefix ("o")
+       (:map (clojure-mode-map clojurescript-mode-map)
+             (:prefix ("o")
                       "e" #'convert-to-edn
                       "j" #'convert-to-json
                       "y" #'convert-to-yaml)
-       (:prefix ("e" . "eval")
-        "f" #'cider-eval-defun-at-point
-        ";" #'cider-pprint-eval-last-sexp-to-comment)))
+             (:prefix ("e" . "eval")
+                      "f" #'cider-eval-defun-at-point
+                      ";" #'cider-pprint-eval-last-sexp-to-comment)))
       (:leader
        (:map (clojure-mode-map clojurescript-mode-map emacs-lisp-mode-map)
-        (:prefix ("s" . "cider")
-         "a" #'cider-switch-to-repl-buffer)
-        (:prefix ("k" . "lisp")
-         (:prefix ("d" . "kill")
-          "x" #'sp-kill-sexp
-          "X" #'sp-backward-kill-sexp)
-         "r" #'paredit-raise-sexp
-         "s" #'sp-forward-slurp-sexp
-         "S" #'sp-backward-slurp-sexp
-         "y" #'sp-copy-sexp
-         "b" #'sp-forward-barf-sexp
-         "B" #'sp-backward-barf-sexp
-         "w" #'sp-wrap-round))))
+             (:prefix ("s" . "cider")
+                      "a" #'cider-switch-to-repl-buffer)
+             (:prefix ("k" . "lisp")
+                      (:prefix ("d" . "kill")
+                               "x" #'sp-kill-sexp
+                               "X" #'sp-backward-kill-sexp)
+                      "r" #'paredit-raise-sexp
+                      "s" #'sp-forward-slurp-sexp
+                      "S" #'sp-backward-slurp-sexp
+                      "y" #'sp-copy-sexp
+                      "b" #'sp-forward-barf-sexp
+                      "B" #'sp-backward-barf-sexp
+                      "w" #'sp-wrap-round))))
 
 (map! :leader
       ;;; <leader> TAB --- workspace
       (:when (featurep! :ui workspaces)
-       (:prefix-map ("TAB" . "workspace")
-        :desc "Move right"  "}"   #'+workspace/swap-right
-        :desc "Move left"   "{"   #'+workspace/swap-left)))
+        (:prefix-map ("TAB" . "workspace")
+         :desc "Move right"  "}"   #'+workspace/swap-right
+         :desc "Move left"   "{"   #'+workspace/swap-left)))
 
 (after! clojure-mode
   (setq cljr-magic-require-namespaces
@@ -196,3 +196,25 @@
       (insert (shell-command-to-string cmd)))))
 
 (define-key evil-normal-state-map (kbd "RET") 'run-sql)
+
+(defun clj-insert-persist-scope-macro ()
+  (interactive)
+  (insert
+   "(defmacro persist-scope
+              \"Takes local scope vars and defines them in the global scope. Useful for RDD\"
+              []
+              `(do ~@(map (fn [v] `(def ~v ~v))
+                  (keys (cond-> &env (contains? &env :locals) :locals)))))"))
+
+(defun persist-scope ()
+  (interactive)
+  (let ((beg (point)))
+    (clj-insert-persist-scope-macro)
+    (cider-eval-region beg (point))
+    (delete-region beg (point))
+    (insert "(persist-scope)")
+    (cider-eval-defun-at-point)
+    (delete-region beg (point))))
+
+(setq cider-print-options '(("print-level" 20) ("level" 20)))
+
